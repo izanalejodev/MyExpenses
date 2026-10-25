@@ -1,6 +1,5 @@
 <?php
 declare(strict_types=1);
-
 // ---------- DATOS ----------
 // Cada movimiento es un array asociativo.
 // Las cantidades van en CÉNTIMOS (int) para evitar errores de decimales con float.
@@ -29,6 +28,24 @@ function formatearEuros(int $centimos): string
     return number_format($centimos / 100, 2, ',', '.') . ' €';
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $concepto = trim($_POST['concepto'] ?? '');
+    $cantidad = trim($_POST['cantidad'] ?? '');
+    $tipo = trim($_POST['tipo'] ?? '');
+
+    $errores = [];
+
+    if ($concepto === '') {
+        $errores[] = 'El concepto no es valido.';
+    }
+    if (!is_numeric($cantidad) || (float)$cantidad <= 0) {
+    $errores[] = 'La cantidad debe ser un número mayor que 0.';
+} 
+    if (!in_array($tipo, ['gasto', 'ingreso'], true)){
+         $errores[] = 'El tipo no puede estar vacío.';
+    }
+}
+
 // Los totales se CALCULAN a partir de los movimientos, no se guardan aparte
 $ingresos = sumarPorTipo($movimientos, 'ingreso');
 $gastos   = sumarPorTipo($movimientos, 'gasto');
@@ -42,7 +59,15 @@ $saldo    = $ingresos - $gastos;
 </head>
 <body>
     <h1>MyExpenses</h1>
+    <?php foreach($errores):?>
 
+    <form method="post">
+        <input type="text" name="concepto" placeholder="Concepto" required step="">
+        <input type="number" name="cantidad" placeholder="Cantidad" required step="0.1">
+        <button class="anadirGasto" name="tipo" value="gasto">Añadir gasto </button>
+        <button class="anadirIngreso" name="tipo" value="ingreso">Añadir ingreso </button>
+    </form><br><br>
+    <h2>Resumen de datos</h2>
     <!-- ---------- VISTA: solo muestra, no calcula ---------- -->
     <table border="1" cellpadding="6">
         <tr>
